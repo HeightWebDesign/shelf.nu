@@ -1,5 +1,5 @@
 import { Map, Marker } from "pigeon-maps";
-import { maptiler } from "pigeon-maps/providers";
+import { maptiler } from "pigeon-maps/lib/providers.cjs.js";
 import { ClientOnly } from "remix-utils/client-only";
 import { MAPTILER_TOKEN } from "~/utils/env";
 
