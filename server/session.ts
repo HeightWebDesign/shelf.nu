@@ -27,7 +27,7 @@ export function createSessionStorage() {
       path: "/",
       sameSite: "lax",
       secrets: [env.SESSION_SECRET],
-      secure: env.NODE_ENV === "production",
+      secure: env.NODE_ENV === "production" && env.SERVER_URL?.startsWith("https"),
     },
   });
 }

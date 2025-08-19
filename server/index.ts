@@ -79,6 +79,8 @@ export const server = await createHonoServer({
 
       return url.pathname;
     },
+    // Trust proxy headers for reverse proxy setups
+    trustProxy: true,
   },
   assetsDir: "file-assets",
   /** Disable default logger as we have our own */
