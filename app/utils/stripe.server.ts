@@ -253,18 +253,14 @@ export async function getOrCreateCustomerId(
   const customerId = user.customerId
     ? user.customerId
     : await createStripeCustomer({
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
-        userId: user.id,
-      });
-
-  if (!customerId) {
-    throw new ShelfError({
-      cause: null,
-      message: "No customer ID found for user",
-      additionalData: { user },
-      label: "Subscription",
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`,
+      userId: user.id,
     });
+
+  // If premium features are disabled or Stripe is not configured, return null instead of throwing
+  if (!customerId) {
+    return null;
   }
   return customerId;
 }

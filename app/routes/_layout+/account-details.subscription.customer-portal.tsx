@@ -50,6 +50,15 @@ export async function action({ context, request }: ActionFunctionArgs) {
       ...user,
     });
 
+    if (!customerId) {
+      throw new ShelfError({
+        cause: null,
+        message: "Premium features are not available. Please contact support.",
+        additionalData: { userId },
+        label: "Subscription",
+      });
+    }
+
     const { url } = await createBillingPortalSession({
       customerId,
     });

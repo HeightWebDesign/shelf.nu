@@ -155,13 +155,21 @@ export const loader = async ({ context, params }: LoaderFunctionArgs) => {
       {} as Record<string, number>
     );
 
-    /** Get the Stripe customer */
-    const customer = (await getStripeCustomer(
-      await getOrCreateCustomerId(user)
-    )) as CustomerWithSubscriptions;
+    /** Get the Stripe customer - handle case where premium features are disabled */
+    let customer: CustomerWithSubscriptions | null = null;
+    let prices = null;
 
-    /* Get the prices and products from Stripe */
-    const prices = await getStripePricesAndProducts();
+    try {
+      const customerId = await getOrCreateCustomerId(user);
+      if (customerId) {
+        customer = (await getStripeCustomer(customerId)) as CustomerWithSubscriptions;
+        prices = await getStripePricesAndProducts();
+      }
+    } catch (error) {
+      // If premium features are disabled or Stripe is not configured, 
+      // we can still show the user details without subscription info
+      console.warn("Could not load Stripe customer data:", error);
+    }
     return json(
       data({
         user,
@@ -293,9 +301,8 @@ export const action = async ({
 
         sendNotification({
           title: "Subscription check updated",
-          message: `The user's subscription check has been ${
-            skipSubscriptionCheck ? "disabled" : "enabled"
-          } successfully`,
+          message: `The user's subscription check has been ${skipSubscriptionCheck ? "disabled" : "enabled"
+            } successfully`,
           icon: { name: "check", variant: "success" },
           senderId: userId,
         });
@@ -354,8 +361,8 @@ export default function Area51UserPage() {
         return typeof value === "string"
           ? value
           : typeof value === "boolean"
-          ? String(value)
-          : null;
+            ? String(value)
+            : null;
     }
   };
   const hasSubscription = (customer?.subscriptions?.total_count ?? 0) > 0;
@@ -372,15 +379,15 @@ export default function Area51UserPage() {
             <ul className="mt-5">
               {user
                 ? Object.entries(user)
-                    .filter(
-                      ([k, _v]) => !["qrCodes", "customTierLimit"].includes(k)
-                    )
-                    .map(([key, value]) => (
-                      <li key={key}>
-                        <span className="font-semibold">{key}</span>:{" "}
-                        {renderValue(key as keyof User, value)}
-                      </li>
-                    ))
+                  .filter(
+                    ([k, _v]) => !["qrCodes", "customTierLimit"].includes(k)
+                  )
+                  .map(([key, value]) => (
+                    <li key={key}>
+                      <span className="font-semibold">{key}</span>:{" "}
+                      {renderValue(key as keyof User, value)}
+                    </li>
+                  ))
                 : null}
             </ul>
           </div>
@@ -397,8 +404,10 @@ export default function Area51UserPage() {
             <h3>User subscriptions</h3>
             {!hasSubscription ? (
               <div>No subscription found</div>
-            ) : (
+            ) : customer && prices ? (
               <SubscriptionsOverview customer={customer} prices={prices} />
+            ) : (
+              <div>Subscription data not available</div>
             )}
           </div>
         </div>
